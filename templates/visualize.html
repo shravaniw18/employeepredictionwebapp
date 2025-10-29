@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · HR Analytics Pro{% endblock %}
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+{% block content %}
+<style>
+ /* Enhanced styling for interactive charts */
+.chart-container {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,.05);
+    transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0,0,0,.1);
+}
+
+.plotly-graph-div {
+    border-radius: 12px;
+    min-height: 400px;
+}
+
+/* Section headers */
+h4 {
+    color: #4361ee;
+    font-weight: 600;
+    border-bottom: 2px solid #4361ee;
+    padding-bottom: 10px;
+}
+</style>
+<div class="container-fluid">
+  <!-- Header Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="mb-1">HR Analytics Dashboard</h2>
+          <p class="text-muted">Comprehensive insights into your workforce data</p>
+        </div>
+        <!-- <div class="d-flex gap-2">
+          <a href="{{ url_for('upload') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Upload New Data
+          </a>
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+              <i class="bi bi-download me-1"></i>Export
+            </button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('export_data', format='csv') }}">CSV Format</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('export_data', format='excel') }}">Excel Format</a></li>
+            </ul>
+          </div>
+        </div> -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Overview -->
+  {% if n_rows and n_cols %}
+  <div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card stat-card">
+        <div class="number">{{ n_rows }}</div>
+        <div class="label">Employees</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card stat-card">
+        <div class="number">{{ n_cols }}</div>
+        <div class="label">Data Attributes</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card stat-card">
+        <div class="number">{{ departments|length - 1 }}</div>
+        <div class="label">Departments</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card stat-card">
+        <div class="number">{{ job_roles|length - 1 }}</div>
+        <div class="label">Job Roles</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Filters Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="filter-section">
+        <h5 class="mb-3"><i class="bi bi-funnel me-2"></i>Data Filters</h5>
+        <form method="GET" action="{{ url_for('visualize') }}" class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Department</label>
+            <select class="form-select" name="department">
+              <option value="All">All Departments</option>
+              {% for dept in departments %}
+              <option value="{{ dept }}" {% if filters.department == dept %}selected{% endif %}>{{ dept }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Job Role</label>
+            <select class="form-select" name="job_role">
+              <option value="All">All Job Roles</option>
+              {% for role in job_roles %}
+              <option value="{{ role }}" {% if filters.job_role == role %}selected{% endif %}>{{ role }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Monthly Income Range</label>
+            <div class="d-flex align-items-center">
+              <input type="number" class="form-control me-2" placeholder="Min" name="min_salary" value="{{ filters.min_salary }}">
+              <span class="mx-2">-</span>
+              <input type="number" class="form-control ms-2" placeholder="Max" name="max_salary" value="{{ filters.max_salary }}">
+            </div>
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Prompt if no data -->
+  {% if not n_rows or not n_cols %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card p-5 text-center">
+        <div class="bg-light rounded-circle d-inline-flex p-4 mb-3">
+          <i class="bi bi-database text-primary" style="font-size: 2.5rem;"></i>
+        </div>
+        <h4>No Data Available</h4>
+        <p class="text-muted mb-4">Upload your employee data to start generating insights and visualizations</p>
+        <a href="{{ url_for('upload') }}" class="btn btn-primary btn-lg">
+          <i class="bi bi-cloud-upload me-2"></i>Upload Dataset
+        </a>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <!-- Visualizations Grid -->
+  <div class="row">
+    <!-- Interactive Plotly Charts -->
+    {% if dept_perf_bar_html %}
+    <div class="col-lg-6 mb-4">
+      <div class="chart-container">
+        <h5 class="mb-3">Department Performance</h5>
+        {{ dept_perf_bar_html|safe }}
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if years_perf_trend_html %}
+    <div class="col-lg-6 mb-4">
+      <div class="chart-container">
+        <h5 class="mb-3">Tenure vs Performance</h5>
+        {{ years_perf_trend_html|safe }}
+      </div>
+    </div>
+    {% endif %}
+    
+    <!-- Static Matplotlib Charts -->
+    {% if dist_age_png %}
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="chart-container">
+        <h5 class="mb-3">Age Distribution</h5>
+        <img src="data:image/png;base64,{{ dist_age_png }}" class="plot img-fluid">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if dist_income_png %}
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="chart-container">
+        <h5 class="mb-3">Income Distribution</h5>
+        <img src="data:image/png;base64,{{ dist_income_png }}" class="plot img-fluid">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if dist_experience_png %}
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="chart-container">
+        <h5 class="mb-3">Experience Distribution</h5>
+        <img src="data:image/png;base64,{{ dist_experience_png }}" class="plot img-fluid">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if pie_gender_png %}
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="chart-container">
+        <h5 class="mb-3">Gender Ratio</h5>
+        <img src="data:image/png;base64,{{ pie_gender_png }}" class="plot img-fluid">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if attrition_jsat_png %}
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="chart-container">
+        <h5 class="mb-3">Attrition vs Job Satisfaction</h5>
+        <img src="data:image/png;base64,{{ attrition_jsat_png }}" class="plot img-fluid">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if box_income_perf_png %}
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="chart-container">
+        <h5 class="mb-3">Income by Performance</h5>
+        <img src="data:image/png;base64,{{ box_income_perf_png }}" class="plot img-fluid">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if corr_heatmap_png %}
+    <div class="col-12 mb-4">
+      <div class="chart-container">
+        <h5 class="mb-3">Correlation Matrix</h5>
+        <img src="data:image/png;base64,{{ corr_heatmap_png }}" class="plot img-fluid">
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if heatmap_dept_perf_png %}
+    <div class="col-12 mb-4">
+      <div class="chart-container">
+        <h5 class="mb-3">Department vs Role Performance</h5>
+        <img src="data:image/png;base64,{{ heatmap_dept_perf_png }}" class="plot img-fluid">
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+<!-- Interactive Plotly Charts Section -->
+<div class="row">
+    <!-- Scatter Plot -->
+    {% if scatter_salary_exp_html %}
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">Salary vs Experience by Department</h5>
+            {{ scatter_salary_exp_html|safe }}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Sunburst Chart -->
+    {% if sunburst_org_html %}
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">Organization Hierarchy</h5>
+            {{ sunburst_org_html|safe }}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Box Plot -->
+    {% if box_salary_role_html %}
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">Salary Distribution by Job Role</h5>
+            {{ box_salary_role_html|safe }}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Interactive Heatmap -->
+    {% if interactive_heatmap_html %}
+    <div class="col-12 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">Interactive Correlation Matrix</h5>
+            {{ interactive_heatmap_html|safe }}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Department Metrics -->
+    {% if dept_metrics_bar_html %}
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">Department Performance Metrics</h5>
+            {{ dept_metrics_bar_html|safe }}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Attrition Pie -->
+    {% if attrition_pie_html %}
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">Attrition Distribution</h5>
+            {{ attrition_pie_html|safe }}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Age Distribution -->
+    {% if age_dist_hist_html %}
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">Age Distribution by Gender</h5>
+            {{ age_dist_hist_html|safe }}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Performance Trend -->
+    {% if performance_trend_html %}
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">Performance Trend by Tenure</h5>
+            {{ performance_trend_html|safe }}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

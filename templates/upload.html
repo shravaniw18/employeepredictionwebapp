@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Upload Data · HR Analytics Pro{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card p-4">
+      <div class="d-flex align-items-center mb-4">
+        <div class="bg-primary p-3 rounded-circle me-3">
+          <i class="bi bi-cloud-upload text-white" style="font-size: 1.5rem;"></i>
+        </div>
+        <div>
+          <h4 class="mb-0">Upload HR Dataset</h4>
+          <p class="text-muted mb-0">Upload your employee data to generate insights</p>
+        </div>
+      </div>
+      
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Supported formats:</strong> CSV, XLSX, XLS<br>
+        <strong>Expected columns:</strong> Age, Department, JobRole, MonthlyIncome, PerformanceRating, Attrition, etc.
+      </div>
+      
+      <form method="POST" enctype="multipart/form-data" class="dropzone needsclick" id="uploadForm">
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Select File</label>
+          <input type="file" name="file" class="form-control form-control-lg" accept=".csv,.xlsx,.xls" required 
+                 onchange="previewFile(this)">
+          <div class="form-text">Max file size: 10MB</div>
+        </div>
+        
+        <div id="filePreview" class="card bg-light p-3 mb-4" style="display: none;">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="mb-1" id="fileName">File name</h6>
+              <small class="text-muted" id="fileSize">File size</small>
+            </div>
+            <button type="button" class="btn-close" onclick="clearFile()"></button>
+          </div>
+        </div>
+        
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary btn-lg px-4" type="submit">
+            <i class="bi bi-cloud-arrow-up me-2"></i>Upload & Analyze
+          </button>
+          <a href="{{ url_for('visualize') }}" class="btn btn-outline-secondary btn-lg px-4">
+            <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
+          </a>
+        </div>
+      </form>
+      
+      <hr class="my-4">
+      
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="mb-3">Sample Data Format</h6>
+          <div class="bg-dark text-light p-3 rounded" style="font-size: 0.8rem;">
+            <code class="text-light">
+              EmployeeNumber,Age,Department,JobRole,MonthlyIncome<br>
+              1,35,Sales,Sales Executive,4500<br>
+              2,42,HR,HR Manager,6200<br>
+              3,28,IT,Developer,3800
+            </code>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <h6 class="mb-3">Need Help?</h6>
+          <ul class="list-unstyled">
+            <li class="mb-2"><i class="bi bi-question-circle me-2 text-primary"></i>Check our documentation</li>
+            <li class="mb-2"><i class="bi bi-envelope me-2 text-primary"></i>Contact support</li>
+            <li><i class="bi bi-download me-2 text-primary"></i><a href="#">Download template</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function previewFile(input) {
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const preview = document.getElementById('filePreview');
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileSize').textContent = formatFileSize(file.size);
+      preview.style.display = 'block';
+    }
+  }
+  
+  function clearFile() {
+    document.querySelector('input[name="file"]').value = '';
+    document.getElementById('filePreview').style.display = 'none';
+  }
+  
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+</script>
+{% endblock %}

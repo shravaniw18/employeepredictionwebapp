@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Attrition Prediction · HR Analytics Pro{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="mb-1">Attrition Prediction</h2>
+          <p class="text-muted">AI-powered analysis of employee attrition risk</p>
+        </div>
+        <div>
+          <span class="badge bg-primary">Powered by Machine Learning</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8 mb-4">
+      <div class="card p-4">
+        <h4 class="mb-3">Attrition Risk Distribution</h4>
+        {% if risk_chart %}
+        <img src="data:image/png;base64,{{ risk_chart }}" class="img-fluid">
+        {% else %}
+        <div class="text-center py-5">
+          <i class="bi bi-bar-chart text-muted" style="font-size: 3rem;"></i>
+          <p class="text-muted mt-3">No prediction data available</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+      <div class="card p-4">
+        <h4 class="mb-3">Risk Summary</h4>
+        <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+          <div>
+            <h6 class="mb-0">High Risk Employees</h6>
+            <small class="text-muted">Need immediate attention</small>
+          </div>
+          <span class="badge bg-danger">{{ high_risk_employees|length }}</span>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+          <div>
+            <h6 class="mb-0">Total Analyzed</h6>
+            <small class="text-muted">Employees in dataset</small>
+          </div>
+          <span class="badge bg-primary">{{ high_risk_employees|length * 3 }}</span>
+        </div>
+        
+        <a href="#" class="btn btn-outline-primary w-100 mt-3">
+          <i class="bi bi-download me-2"></i>Export Risk Report
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% if feature_importance_chart %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card p-4">
+        <h4 class="mb-3">Feature Importance</h5>
+        <img src="data:image/png;base64,{{ feature_importance_chart }}" class="img-fluid">
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if high_risk_employees %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 class="mb-0">High Risk Employees</h4>
+          <span class="badge bg-danger">{{ high_risk_employees|length }} Employees</span>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Employee ID</th>
+                <th>Age</th>
+                <th>Department</th>
+                <th>Job Role</th>
+                <th>Monthly Income</th>
+                <th>Risk Score</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for employee in high_risk_employees %}
+              <tr>
+                <td>{{ employee.EmployeeNumber }}</td>
+                <td>{{ employee.Age }}</td>
+                <td>{{ employee.Department }}</td>
+                <td>{{ employee.JobRole }}</td>
+                <td>${{ employee.MonthlyIncome }}</td>
+                <td>
+                  <!-- <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ employee.AttritionRisk * 100 }}%"></div>
+                  </div> -->
+                  <small>{{ (employee.AttritionRisk * 100)|round(1) }}%</small>
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary">Review</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
